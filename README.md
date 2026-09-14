@@ -1,6 +1,6 @@
 # BugDrop Demo
 
-Live demo of [BugDrop](https://github.com/mean-weasel/bugdrop) — a free, open-source widget: in-app feedback → GitHub Issues.
+Live demo of [BugDrop](https://github.com/bugdrophq/bugdrop) — a free, open-source widget: in-app feedback → GitHub Issues.
 
 **Try it:** https://bugdrop-widget-test.vercel.app
 
@@ -15,7 +15,7 @@ A free, open-source **GitHub App** that adds a feedback widget to your app:
 
 ## About This Demo
 
-WienerMatch is a fictional landing page used to demonstrate BugDrop. Issues submitted here go to this repo's [Issues](https://github.com/mean-weasel/bugdrop-widget-test/issues).
+WienerMatch is a fictional landing page used to demonstrate BugDrop. Issues submitted here go to this repo's [Issues](https://github.com/bugdrophq/bugdrop-widget-test/issues).
 
 ## Widget Configuration
 
@@ -38,7 +38,7 @@ This demo uses the **default configuration** (title + description only). Develop
 | `data-show-email` | Display email input field | `false` |
 | `data-require-email` | Make email required | `false` |
 
-See the [BugDrop documentation](https://github.com/mean-weasel/bugdrop#widget-options) for all options.
+See the [BugDrop documentation](https://github.com/bugdrophq/bugdrop#widget-options) for all options.
 
 ## Homepage demo Issue retention
 
@@ -92,12 +92,12 @@ manual dry runs remain available for diagnosis.
 
 ## Repository migration controls
 
-The production build defaults to the current `mean-weasel` repositories. During
-the organization cutover, set these Vercel variables together and redeploy:
+The production build defaults to the canonical `bugdrophq` repositories. The
+matching Vercel variables are:
 
 - `VITE_BUGDROP_CORE_REPOSITORY=bugdrophq/bugdrop`
 - `VITE_BUGDROP_TEST_REPOSITORY=bugdrophq/bugdrop-widget-test`
 
-Only the old and new BugDrop locations are accepted. The cleanup workflow uses
+Only the old and new BugDrop locations are accepted during the rollback window. The cleanup workflow uses
 GitHub's runtime `GITHUB_REPOSITORY` value and independently verifies immutable
 repository ID `1120085442` before it reads or mutates Issues.

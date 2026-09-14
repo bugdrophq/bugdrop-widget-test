@@ -26,13 +26,13 @@ function approvedRepository(
 
 const coreRepository = approvedRepository(
   process.env.VITE_BUGDROP_CORE_REPOSITORY,
-  'mean-weasel/bugdrop',
+  'bugdrophq/bugdrop',
   approvedCoreRepositories,
   'VITE_BUGDROP_CORE_REPOSITORY',
 )
 const testRepository = approvedRepository(
   process.env.VITE_BUGDROP_TEST_REPOSITORY,
-  'mean-weasel/bugdrop-widget-test',
+  'bugdrophq/bugdrop-widget-test',
   approvedTestRepositories,
   'VITE_BUGDROP_TEST_REPOSITORY',
 )

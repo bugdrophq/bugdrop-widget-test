@@ -7,7 +7,7 @@ import {
   selectEligibleHomepageDemoIssues,
 } from "../scripts/cleanup-homepage-demo-issues.mjs";
 
-const repository = "mean-weasel/bugdrop-widget-test";
+const repository = "bugdrophq/bugdrop-widget-test";
 const repositoryId = 1120085442;
 const token = "test-token";
 const nowMs = Date.parse("2026-08-17T12:00:00Z");
@@ -186,7 +186,7 @@ test("rejects pagination that escapes the authenticated Issues query", async () 
     methods.push(options.method);
     return jsonResponse([issue()], {
       headers: {
-        link: '<https://example.com/repos/mean-weasel/bugdrop-widget-test/issues?state=open&labels=bugdrop&per_page=100&page=2>; rel="next"',
+        link: '<https://example.com/repos/bugdrophq/bugdrop-widget-test/issues?state=open&labels=bugdrop&per_page=100&page=2>; rel="next"',
       },
     });
   };
@@ -208,7 +208,7 @@ test("rejects Issues returned from any other repository", async () => {
   const fetchImpl = async (_url, options) => {
     methods.push(options.method);
     return jsonResponse([
-      issue({ repository_url: "https://api.github.com/repos/mean-weasel/other" }),
+      issue({ repository_url: "https://api.github.com/repos/bugdrophq/other" }),
     ]);
   };
   await assert.rejects(
