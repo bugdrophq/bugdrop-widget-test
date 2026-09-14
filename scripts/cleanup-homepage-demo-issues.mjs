@@ -13,7 +13,11 @@ export const EXCLUDED_TITLE_PREFIXES = [
   "[BugDrop CI canary]",
 ];
 
-const EXACT_REPOSITORY = "mean-weasel/bugdrop-widget-test";
+export const EXPECTED_REPOSITORY_ID = 1120085442;
+export const APPROVED_REPOSITORIES = new Set([
+  "mean-weasel/bugdrop-widget-test",
+  "bugdrophq/bugdrop-widget-test",
+]);
 const API_ORIGIN = "https://api.github.com";
 const ABSOLUTE_MAX_ELIGIBLE = 100;
 
@@ -68,9 +72,32 @@ export function selectEligibleHomepageDemoIssues(
   return [...byNumber.values()].sort((left, right) => left.number - right.number);
 }
 
-function assertRepository(repository) {
-  if (repository !== EXACT_REPOSITORY) {
-    throw new Error(`Cleanup repository must be exactly ${EXACT_REPOSITORY}`);
+function assertRepository(repository, expectedRepositoryId) {
+  if (!APPROVED_REPOSITORIES.has(repository)) {
+    throw new Error(
+      `Cleanup repository must be an approved BugDrop test repository: ${repository}`,
+    );
+  }
+  if (!Number.isInteger(expectedRepositoryId) || expectedRepositoryId < 1) {
+    throw new Error("expectedRepositoryId must be a positive integer");
+  }
+}
+
+async function verifyRepositoryIdentity({
+  repository,
+  expectedRepositoryId,
+  token,
+  fetchImpl,
+}) {
+  const response = await fetchImpl(`${API_ORIGIN}/repos/${repository}`, {
+    method: "GET",
+    headers: requestHeaders(token),
+  });
+  const body = await responseJson(response, "GitHub repository identity read");
+  if (body?.id !== expectedRepositoryId || body?.full_name !== repository) {
+    throw new Error(
+      `Repository identity mismatch: expected ${repository} (${expectedRepositoryId})`,
+    );
   }
 }
 
@@ -209,6 +236,7 @@ async function mutateIssue({ repository, number, token, fetchImpl, summary }) {
 
 export async function runCleanup({
   repository,
+  expectedRepositoryId = EXPECTED_REPOSITORY_ID,
   token,
   dryRun,
   cutoffHours = 24,
@@ -218,7 +246,7 @@ export async function runCleanup({
   expectedEligibleNumbers = [],
   execution = "manual",
 }) {
-  assertRepository(repository);
+  assertRepository(repository, expectedRepositoryId);
   assertBounds(cutoffHours, maxEligible);
   requestHeaders(token);
   if (typeof dryRun !== "boolean") throw new Error("dryRun must be a boolean");
@@ -226,6 +254,12 @@ export async function runCleanup({
     throw new Error("execution must be manual or scheduled");
   }
 
+  await verifyRepositoryIdentity({
+    repository,
+    expectedRepositoryId,
+    token,
+    fetchImpl,
+  });
   const issues = await readOpenBugDropIssues({ repository, token, fetchImpl });
   const eligibleIssues = selectEligibleHomepageDemoIssues(
     issues,
@@ -336,6 +370,7 @@ export async function runCleanup({
 function parseCliArguments(argv) {
   const allowed = new Set([
     "repository",
+    "expected-repository-id",
     "dry-run",
     "cutoff-hours",
     "max-eligible",
@@ -358,6 +393,7 @@ function parseCliArguments(argv) {
   }
   return {
     repository: values.get("repository"),
+    expectedRepositoryId: Number(values.get("expected-repository-id")),
     dryRun: values.get("dry-run") === "true",
     cutoffHours: Number(values.get("cutoff-hours")),
     maxEligible: Number(values.get("max-eligible")),
@@ -392,7 +428,7 @@ async function main() {
   } catch (error) {
     summary = error.summary ?? {
       mode: "failed",
-      repository: EXACT_REPOSITORY,
+      repository: null,
       cutoff: null,
       scanned: 0,
       eligible: [],
