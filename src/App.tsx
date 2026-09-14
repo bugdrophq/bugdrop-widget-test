@@ -1,6 +1,12 @@
 import { useState } from 'react'
 import './App.css'
 
+declare const __BUGDROP_CORE_REPOSITORY__: string
+declare const __BUGDROP_TEST_REPOSITORY__: string
+
+const bugdropRepositoryUrl = `https://github.com/${__BUGDROP_CORE_REPOSITORY__}`
+const testRepositoryIssuesUrl = `https://github.com/${__BUGDROP_TEST_REPOSITORY__}/issues`
+
 // BugDrop API type declaration
 declare global {
   interface Window {
@@ -81,7 +87,7 @@ function App() {
             <a href="#api-demo">
               API Demo ↓
             </a>
-            <a href="https://github.com/mean-weasel/bugdrop" target="_blank" rel="noopener noreferrer">
+            <a href={bugdropRepositoryUrl} target="_blank" rel="noopener noreferrer">
               GitHub
             </a>
             <a href="https://github.com/apps/bugdrop/installations/new" target="_blank" rel="noopener noreferrer">
@@ -509,12 +515,12 @@ function App() {
             <a href="https://github.com/apps/bugdrop/installations/new" target="_blank" rel="noopener noreferrer" className="btn btn-bugdrop-primary">
               Install Free →
             </a>
-            <a href="https://github.com/mean-weasel/bugdrop" target="_blank" rel="noopener noreferrer" className="btn btn-bugdrop-secondary">
+            <a href={bugdropRepositoryUrl} target="_blank" rel="noopener noreferrer" className="btn btn-bugdrop-secondary">
               View on GitHub
             </a>
           </div>
           <p className="bugdrop-cta-note">
-            See the <a href="https://github.com/mean-weasel/bugdrop-widget-test/issues" target="_blank" rel="noopener noreferrer">issues created by this demo</a>
+            See the <a href={testRepositoryIssuesUrl} target="_blank" rel="noopener noreferrer">issues created by this demo</a>
           </p>
         </div>
       </section>
@@ -524,7 +530,7 @@ function App() {
         <div className="footer-content">
           <div className="footer-bugdrop">
             <span>🐛</span> Powered by{' '}
-            <a href="https://github.com/mean-weasel/bugdrop" target="_blank" rel="noopener noreferrer">
+            <a href={bugdropRepositoryUrl} target="_blank" rel="noopener noreferrer">
               <strong>BugDrop</strong>
             </a>
             {' — free to install & self-host · '}

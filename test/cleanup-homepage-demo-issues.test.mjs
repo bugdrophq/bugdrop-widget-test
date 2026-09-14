@@ -8,6 +8,7 @@ import {
 } from "../scripts/cleanup-homepage-demo-issues.mjs";
 
 const repository = "mean-weasel/bugdrop-widget-test";
+const repositoryId = 1120085442;
 const token = "test-token";
 const nowMs = Date.parse("2026-08-17T12:00:00Z");
 
@@ -32,6 +33,84 @@ function jsonResponse(body, init = {}) {
     ...init,
   });
 }
+
+function withRepositoryIdentity(
+  fetchImpl,
+  { requestRepository = repository, id = repositoryId, fullName = requestRepository } = {},
+) {
+  return async (url, options) => {
+    if (
+      String(url) === `https://api.github.com/repos/${requestRepository}` &&
+      options.method === "GET"
+    ) {
+      return jsonResponse({
+        id,
+        full_name: fullName,
+      });
+    }
+    return fetchImpl(url, options);
+  };
+}
+
+test("accepts the destination slug only for the same immutable repository", async () => {
+  const destinationRepository = "bugdrophq/bugdrop-widget-test";
+  const fetchImpl = async (_url, options) => {
+    assert.equal(options.method, "GET");
+    return jsonResponse([]);
+  };
+
+  const summary = await runCleanup({
+    repository: destinationRepository,
+    token,
+    dryRun: true,
+    nowMs,
+    fetchImpl: withRepositoryIdentity(fetchImpl, {
+      requestRepository: destinationRepository,
+    }),
+  });
+
+  assert.equal(summary.repository, destinationRepository);
+  assert.deepEqual(summary.eligible, []);
+});
+
+test("rejects a replacement repository before reading or mutating Issues", async () => {
+  const forwardedMethods = [];
+  const fetchImpl = async (_url, options) => {
+    forwardedMethods.push(options.method);
+    return jsonResponse([]);
+  };
+
+  await assert.rejects(
+    runCleanup({
+      repository,
+      token,
+      dryRun: false,
+      nowMs,
+      execution: "scheduled",
+      fetchImpl: withRepositoryIdentity(fetchImpl, { id: 999 }),
+    }),
+    /Repository identity mismatch/,
+  );
+  assert.deepEqual(forwardedMethods, []);
+});
+
+test("rejects repositories outside the migration allowlist without network access", async () => {
+  let called = false;
+  await assert.rejects(
+    runCleanup({
+      repository: "someone-else/bugdrop-widget-test",
+      token,
+      dryRun: true,
+      nowMs,
+      fetchImpl: async () => {
+        called = true;
+        return jsonResponse([]);
+      },
+    }),
+    /approved BugDrop test repository/,
+  );
+  assert.equal(called, false);
+});
 
 test("accepts an exact homepage demo at the 24-hour boundary", () => {
   assert.equal(
@@ -90,7 +169,7 @@ test("dry run follows authenticated GitHub pagination and performs GET only", as
     dryRun: true,
     cutoffHours: 24,
     nowMs,
-    fetchImpl,
+    fetchImpl: withRepositoryIdentity(fetchImpl),
     maxEligible: 100,
   });
 
@@ -112,7 +191,13 @@ test("rejects pagination that escapes the authenticated Issues query", async () 
     });
   };
   await assert.rejects(
-    runCleanup({ repository, token, dryRun: true, nowMs, fetchImpl }),
+    runCleanup({
+      repository,
+      token,
+      dryRun: true,
+      nowMs,
+      fetchImpl: withRepositoryIdentity(fetchImpl),
+    }),
     /escaped the authenticated Issues query/,
   );
   assert.deepEqual(methods, ["GET"]);
@@ -127,7 +212,13 @@ test("rejects Issues returned from any other repository", async () => {
     ]);
   };
   await assert.rejects(
-    runCleanup({ repository, token, dryRun: true, nowMs, fetchImpl }),
+    runCleanup({
+      repository,
+      token,
+      dryRun: true,
+      nowMs,
+      fetchImpl: withRepositoryIdentity(fetchImpl),
+    }),
     /escaped the exact repository/,
   );
   assert.deepEqual(methods, ["GET"]);
@@ -145,7 +236,7 @@ test("live mode closes then labels eligible Issues sequentially", async () => {
     token,
     dryRun: false,
     nowMs,
-    fetchImpl,
+    fetchImpl: withRepositoryIdentity(fetchImpl),
     expectedEligibleNumbers: [44],
   });
 
@@ -175,7 +266,7 @@ test("reports close-without-label partial failure and stops", async () => {
     token,
     dryRun: false,
     nowMs,
-    fetchImpl,
+    fetchImpl: withRepositoryIdentity(fetchImpl),
     expectedEligibleNumbers: [4, 5],
   });
 
@@ -201,7 +292,7 @@ test("preserves partial mutation evidence when the label request throws", async 
       token,
       dryRun: false,
       nowMs,
-      fetchImpl,
+      fetchImpl: withRepositoryIdentity(fetchImpl),
       expectedEligibleNumbers: [6],
     }),
     (error) => {
@@ -236,7 +327,7 @@ test("stops over-cap batches before any mutation", async () => {
       token,
       dryRun: false,
       nowMs,
-      fetchImpl,
+      fetchImpl: withRepositoryIdentity(fetchImpl),
       maxEligible: 2,
       execution: "scheduled",
     }),
@@ -264,7 +355,7 @@ test("manual live mode stops before mutation when an authorized candidate drifts
       token,
       dryRun: false,
       nowMs,
-      fetchImpl,
+      fetchImpl: withRepositoryIdentity(fetchImpl),
       expectedEligibleNumbers: [71, 73],
     }),
     (error) => {
@@ -293,7 +384,7 @@ test("manual live mode rejects an empty authorization before mutation", async ()
       token,
       dryRun: false,
       nowMs,
-      fetchImpl,
+      fetchImpl: withRepositoryIdentity(fetchImpl),
       expectedEligibleNumbers: [],
     }),
     /requires at least one expected Issue/,
@@ -313,7 +404,7 @@ test("manual live mode cannot select scheduled behavior through its Issue input"
       token,
       dryRun: false,
       nowMs,
-      fetchImpl,
+      fetchImpl: withRepositoryIdentity(fetchImpl),
       execution: "manual",
       expectedEligibleNumbers: [Number("scheduled")],
     }),
@@ -336,7 +427,7 @@ test("manual live mode mutates only the exact authorized subset", async () => {
     token,
     dryRun: false,
     nowMs,
-    fetchImpl,
+    fetchImpl: withRepositoryIdentity(fetchImpl),
     maxEligible: 1,
     expectedEligibleNumbers: [82],
   });
@@ -355,7 +446,13 @@ test("malformed API JSON produces no mutation", async () => {
     return new Response("not-json", { status: 200 });
   };
   await assert.rejects(
-    runCleanup({ repository, token, dryRun: false, nowMs, fetchImpl }),
+    runCleanup({
+      repository,
+      token,
+      dryRun: false,
+      nowMs,
+      fetchImpl: withRepositoryIdentity(fetchImpl),
+    }),
     /malformed JSON/,
   );
   assert.deepEqual(methods, ["GET"]);
@@ -372,7 +469,7 @@ test("scheduled rerun after closure is idempotent", async () => {
     token,
     dryRun: false,
     nowMs,
-    fetchImpl,
+    fetchImpl: withRepositoryIdentity(fetchImpl),
     execution: "scheduled",
   });
   assert.deepEqual(summary.eligible, []);
@@ -397,7 +494,7 @@ test("25-hour heartbeat is excluded while a normal demo remains dry-run only", a
     token,
     dryRun: true,
     nowMs,
-    fetchImpl,
+    fetchImpl: withRepositoryIdentity(fetchImpl),
   });
   assert.deepEqual(summary.eligible, [32]);
   assert.deepEqual(methods, ["GET"]);

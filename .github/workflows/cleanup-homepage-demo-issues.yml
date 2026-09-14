@@ -44,7 +44,8 @@ jobs:
           EXPECTED_ISSUES: ${{ inputs.expected_issues || '' }}
         run: |
           node scripts/cleanup-homepage-demo-issues.mjs \
-          --repository=mean-weasel/bugdrop-widget-test \
+          --repository="$GITHUB_REPOSITORY" \
+          --expected-repository-id=1120085442 \
           --cutoff-hours=24 \
           --max-eligible=100 \
           "--execution=${EXECUTION}" \

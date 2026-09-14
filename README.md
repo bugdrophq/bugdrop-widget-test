@@ -89,3 +89,15 @@ number and failure, inspect its current state and labels, and request separate
 repair authority. Do not blindly rerun the workflow. To disable automatic
 cleanup, set `HOMEPAGE_DEMO_CLEANUP_ENABLED=false` (or remove the variable);
 manual dry runs remain available for diagnosis.
+
+## Repository migration controls
+
+The production build defaults to the current `mean-weasel` repositories. During
+the organization cutover, set these Vercel variables together and redeploy:
+
+- `VITE_BUGDROP_CORE_REPOSITORY=bugdrophq/bugdrop`
+- `VITE_BUGDROP_TEST_REPOSITORY=bugdrophq/bugdrop-widget-test`
+
+Only the old and new BugDrop locations are accepted. The cleanup workflow uses
+GitHub's runtime `GITHUB_REPOSITORY` value and independently verifies immutable
+repository ID `1120085442` before it reads or mutates Issues.

@@ -25,7 +25,8 @@ test("workflow pins the exact cleanup boundary", async () => {
   const workflow = await readFile(workflowPath, "utf8");
 
   assert.match(workflow, /node-version: 24/);
-  assert.match(workflow, /--repository=mean-weasel\/bugdrop-widget-test/);
+  assert.match(workflow, /--repository="\$GITHUB_REPOSITORY"/);
+  assert.match(workflow, /--expected-repository-id=1120085442/);
   assert.match(workflow, /--cutoff-hours=24/);
   assert.match(workflow, /--max-eligible=100/);
   assert.match(
