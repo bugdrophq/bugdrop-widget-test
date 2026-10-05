@@ -78,7 +78,7 @@ function App() {
           <span className="demo-banner-icon">🐛</span>
           <span className="demo-banner-text">
             <strong>BugDrop</strong> — In-app feedback → GitHub Issues.
-            Screenshots, annotations, the works. Free & open source.
+            <span className="demo-banner-detail"> Screenshots, annotations, the works. Free & open source.</span>
           </span>
           <div className="demo-banner-links">
             <a href="https://bugdrop.dev" className="demo-banner-back">
@@ -111,6 +111,9 @@ function App() {
           <span className="nav-logo-icon">🐕</span>
           WienerMatch
         </a>
+        <button className="nav-mobile-report" onClick={() => window.BugDrop?.open()}>
+          🐛 Report Bug
+        </button>
         <div className="nav-links">
           <a href="#how-it-works" className="nav-link">How It Works</a>
           <a href="#features" className="nav-link">Features</a>
